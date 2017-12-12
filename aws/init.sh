@@ -39,7 +39,7 @@ echo ":\"ip-172-31-22-193@172.31.22.193\"" >> _build/dev/rel/app/.hosts.txt
 #   --filter Name=tag:Class,Values=${SERVER_CLASS} | sed '$!N;s/\t/\n/' | sed -e "s/\(.*\)/'\1'./" > .hosts.txt
 
 # run application
-_build/dev/rel/app/bin/app foreground
+# _build/dev/rel/app/bin/app foreground
 
 # MIX_ENV=dev elixir --name $HOSTNAME@$ADDRESS -S mix run --no-compile --no-halt
 # iex --name $HOSTNAME@$ADDRESS -S mix
