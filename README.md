@@ -11,8 +11,8 @@ iex --name a@192.168.1.1 -S mix
 # open erlang observer
 :observer.start
 
-# spawn worker that calculates fibonacci for n then dies
-App.fib(n)
+# spawn worker that calculates something for n then dies
+App.work(n)
 
 # list workers running on this node
 Supervisor.which_children(App.Supervisor)
