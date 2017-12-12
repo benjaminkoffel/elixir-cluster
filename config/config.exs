@@ -4,12 +4,12 @@ config :logger,
   backends: [:console],
   compile_time_purge_level: :info
 
-config :libcluster,
-  topologies: [
-    app: [
-      strategy: Cluster.Strategy.ErlangHosts
-    ]
-  ]
+# config :libcluster,
+#   topologies: [
+#     app: [
+#       strategy: Cluster.Strategy.ErlangHosts
+#     ]
+#   ]
 
 # config :libcluster,
 #   topologies: [
@@ -17,10 +17,10 @@ config :libcluster,
 #       strategy: Cluster.Strategy.Epmd,
 #       config: [
 #         hosts: [
-#           :"a@172.19.185.194", 
-#           :"b@172.19.185.194"
+#           :"ip-172-31-31-153@172.31.31.153", 
+#           :"ip-172-31-11-52@172.31.11.52"
 #         ]
-#       ],
+#       ]
 #     ]
 #   ]
 

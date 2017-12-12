@@ -22,7 +22,7 @@ defmodule App.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:distillery, "~> 1.0"},
+      {:distillery, "~> 1.0"},
       {:libcluster, "~> 2.1"},
       {:swarm, "~> 3.0"}
       # {:manifold, "~> 1.0"}
