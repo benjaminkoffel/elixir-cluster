@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # install packages
-sudo su
 wget https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb
 dpkg -i erlang-solutions_1.0_all.deb
 apt-get update
@@ -20,10 +19,9 @@ echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
 sed -i -e "s/\-name.*/\-name $HOSTNAME\@$ADDRESS/g" _build/dev/rel/app/releases/0.1.0/vm.args
 
 # hardcode hosts.txt
-echo "ip-172-31-4-233@172.31.4.233" >> _build/dev/rel/app/.hosts.txt
-echo "ip-172-31-22-193@172.31.22.193" >> _build/dev/rel/app/.hosts.txt
-# echo "a@192.168.1.1" >> _build/dev/rel/app/.hosts.txt
-# echo "b@192.168.1.1" >> _build/dev/rel/app/.hosts.txt
+echo "$HOSTNAME@$ADDRESS" >> _build/dev/rel/app/.hosts.txt
+# echo "ip-172-31-4-233@172.31.4.233" >> _build/dev/rel/app/.hosts.txt
+# echo "ip-172-31-22-193@172.31.22.193" >> _build/dev/rel/app/.hosts.txt
 
 # create .hosts.txt file containing other nodes
 # AWS_DEFAULT_REGION=ap-southeast-2
@@ -36,9 +34,3 @@ echo "ip-172-31-22-193@172.31.22.193" >> _build/dev/rel/app/.hosts.txt
 
 # run application as daemon
 _build/dev/rel/app/bin/app start
-
-# run application in console
-# _build/dev/rel/app/bin/app console
-
-# MIX_ENV=dev elixir --name $HOSTNAME@$ADDRESS -S mix run --no-compile --no-halt
-# iex --name $HOSTNAME@$ADDRESS -S mix
