@@ -24,15 +24,13 @@ echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
 sed -i -e "s/\-name.*/\-name $HOSTNAME\@$ADDRESS/g" _build/dev/rel/app/releases/0.1.0/vm.args
 
 # hardcode hosts.txt
-echo ":\"ip-172-31-11-52@172.31.11.52\"" >> _build/dev/rel/app/.hosts.txt
-echo ":\"ip-172-31-31-153@172.31.31.153\"" >> _build/dev/rel/app/.hosts.txt
+echo ":\"ip-172-31-4-233@172.31.4.233\"" >> _build/dev/rel/app/.hosts.txt
+echo ":\"ip-172-31-22-193@172.31.22.193\"" >> _build/dev/rel/app/.hosts.txt
 # echo ":\"a@192.168.1.1 \"" >> _build/dev/rel/app/.hosts.txt
 # echo ":\"b@192.168.1.1 \"" >> _build/dev/rel/app/.hosts.txt
 
-##sed -r -i "s/\-sname.+/\-name api\@$(hostname)/g" /opt/app/releases/0.1.0/vm.args
-
 # create .hosts.txt file containing other nodes
-AWS_DEFAULT_REGION=ap-southeast-2
+# AWS_DEFAULT_REGION=ap-southeast-2
 # SERVER_CLASS=elixir-cluster-autoscaling-group
 # aws ec2 describe-instances \
 #   --region ap-southeast-2
