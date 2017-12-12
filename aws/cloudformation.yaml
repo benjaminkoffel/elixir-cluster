@@ -1,0 +1,155 @@
+Description: elixir-cluster
+
+Parameters: 
+
+  VpcId: 
+    Type: String
+    Description: VPC the cluster will be deployed in
+
+  ExternalCidr: 
+    Type: String
+    Description: CIDR range that can access SSH
+
+  InternalCidr: 
+    Type: String
+    Description: CIDR range that can access all
+
+Resources:
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupId: elixir-cluster-security-group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: !Ref ExternalCidr
+      - IpProtocol: tcp
+        FromPort: '0'
+        ToPort: '65535'
+        CidrIp: !Ref InternalCidr
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+
+  Policy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: elixir-cluster-policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action: "ec2:DescribeInstances"
+          Resource: "*"
+      Roles:
+      - !Ref Role
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref RootRole
+
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: ami-c315e0a1
+      SecurityGroups:
+      - !Ref SecurityGroup
+      InstanceType: t2.nano
+      IamInstanceProfile: !Ref InstanceProfile
+      AssociatePublicIpAddress: true
+      KeyName: elixir-cluster-keypair
+      UserData: !Base64 |
+        #!/bin/bash -x
+        curl -s https://raw.githubusercontent.com/benjaminkoffel/elixir-cluster/master/aws/init.sh | sudo bash
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones:
+        - ap-southeast-2a
+        - ap-southeast-2b
+        - ap-southeast-2c
+      LaunchConfigurationName: !Ref LaunchConfiguration
+      DesiredCapacity: 2
+      MinSize: 2
+      MaxSize: 10
+      Tags:
+      - Key: Owner
+        Value: bkoffel
+        PropagateAtLaunch: true
+      - Key: Project
+        Value: elixir-cluster
+        PropagateAtLaunch: true
+      - Key: Stream
+        Value: security
+        PropagateAtLaunch: true
+
+  ScalingPolicyUp:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      Cooldown: 60
+      ScalingAdjustment: 1
+  
+  ScalingPolicyDown:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      Cooldown: 300
+      ScalingAdjustment: -1
+
+  AlarmUp:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      EvaluationPeriods: 1
+      Statistic: Average
+      Threshold: 90
+      AlarmDescription: 
+      Period: 60
+      AlarmActions: !Ref ScalingPolicyUp
+      Namespace: AWS/EC2
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref AutoScalingGroup
+      ComparisonOperator: GreaterThanThreshold
+      MetricName: CPUUtilization
+
+  AlarmDown:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      EvaluationPeriods: 5
+      Statistic: Average
+      Threshold: 40
+      AlarmDescription: 
+      Period: 60
+      AlarmActions: !Ref ScalingPolicyDown
+      Namespace: AWS/EC2
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref AutoScalingGroup
+      ComparisonOperator: GreaterThanThreshold
+      MetricName: CPUUtilization
