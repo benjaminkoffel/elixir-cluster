@@ -8,3 +8,4 @@ erl_crash.dump
 *.beam
 *.lock
 .DS_Store
+.hosts.txt
