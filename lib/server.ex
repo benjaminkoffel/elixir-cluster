@@ -45,19 +45,25 @@ defmodule App.Server do
     {:stop, :shutdown, state}
   end
 
-  # calculate fibonacci for value stored in state, then die
+  # calculate something for value stored in state, then die
   def handle_info(:work, state) do
     Logger.info "App.Server.handle_info :work #{state}"
-    f = fib(1, 1, state)
-    Logger.info "App.Server.handle_info :work #{state} #{f}"
+    # a = fib(1, 1, state)
+    a = Enum.join(prime(state), ",")
+    # a = Enum.join(n_primes(state), ",")
+    Logger.info "App.Server.handle_info :work #{state} #{a}"
     {:stop, :normal, state}
   end
 
-  # pretty ordinary fibonacci function
+  # calculate fibonacci for n
   def fib(a, b, n) do
     case n do
       0 -> a
       _ -> fib(b, a+b, n-1)
     end
   end
+
+  # calculate n primes
+  def is_prime(x) do (2..x |> Enum.filter(fn a -> rem(x, a) == 0 end) |> length()) == 1 end
+  def prime(n) do Stream.interval(1) |> Stream.drop(2) |> Stream.filter(&is_prime/1) |> Enum.take(n) end
 end

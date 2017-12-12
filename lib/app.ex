@@ -5,7 +5,7 @@ defmodule App do
     App.Supervisor.start_link(name: App.Supervisor)
   end
 
-  def fib(name) do
+  def work(name) do
     {:ok, pid} = Swarm.register_name(name, App.Supervisor, :register, [name])
     Swarm.join(:group, pid)
   end

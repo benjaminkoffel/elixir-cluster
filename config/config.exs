@@ -10,8 +10,8 @@ config :libcluster,
       strategy: Cluster.Strategy.Epmd,
       config: [
         hosts: [
-          :"a@192.168.1.1", 
-          :"b@192.168.1.1"
+          :"a@172.19.185.194", 
+          :"b@172.19.185.194"
         ]
       ],
     ]
