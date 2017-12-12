@@ -7,7 +7,7 @@ defmodule App do
   end
 
   # ping nodes in hosts.txt to connect to cluster
-  defp connect() do
+  def connect() do
     File.open!(".hosts.txt")
     |> IO.stream(:line)
     |> Enum.each(&Node.ping(String.to_atom(String.trim(&1))))
