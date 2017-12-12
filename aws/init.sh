@@ -10,11 +10,7 @@ apt-get install -y esl-erlang elixir git awscli
 # download and build application
 git clone https://github.com/benjaminkoffel/elixir-cluster.git
 cd elixir-cluster
-mix local.hex --force
-mix deps.get
-mix deps.compile
-mix compile
-mix release
+mix local.hex --force && mix deps.get && mix release
 
 # set hostname and address from instance metadata
 HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/hostname | sed 's/[.].*$//')
@@ -24,10 +20,10 @@ echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
 sed -i -e "s/\-name.*/\-name $HOSTNAME\@$ADDRESS/g" _build/dev/rel/app/releases/0.1.0/vm.args
 
 # hardcode hosts.txt
-echo ":\"ip-172-31-4-233@172.31.4.233\"" >> _build/dev/rel/app/.hosts.txt
-echo ":\"ip-172-31-22-193@172.31.22.193\"" >> _build/dev/rel/app/.hosts.txt
-# echo ":\"a@192.168.1.1 \"" >> _build/dev/rel/app/.hosts.txt
-# echo ":\"b@192.168.1.1 \"" >> _build/dev/rel/app/.hosts.txt
+echo "ip-172-31-4-233@172.31.4.233" >> _build/dev/rel/app/.hosts.txt
+echo "ip-172-31-22-193@172.31.22.193" >> _build/dev/rel/app/.hosts.txt
+# echo "a@192.168.1.1" >> _build/dev/rel/app/.hosts.txt
+# echo "b@192.168.1.1" >> _build/dev/rel/app/.hosts.txt
 
 # create .hosts.txt file containing other nodes
 # AWS_DEFAULT_REGION=ap-southeast-2
@@ -38,8 +34,11 @@ echo ":\"ip-172-31-22-193@172.31.22.193\"" >> _build/dev/rel/app/.hosts.txt
 #   --output text \
 #   --filter Name=tag:Class,Values=${SERVER_CLASS} | sed '$!N;s/\t/\n/' | sed -e "s/\(.*\)/'\1'./" > .hosts.txt
 
-# run application
-# _build/dev/rel/app/bin/app foreground
+# run application as daemon
+_build/dev/rel/app/bin/app start
+
+# run application in console
+# _build/dev/rel/app/bin/app console
 
 # MIX_ENV=dev elixir --name $HOSTNAME@$ADDRESS -S mix run --no-compile --no-halt
 # iex --name $HOSTNAME@$ADDRESS -S mix

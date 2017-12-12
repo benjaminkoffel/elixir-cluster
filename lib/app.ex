@@ -8,9 +8,11 @@ defmodule App do
 
   # ping nodes in hosts.txt to connect to cluster
   def connect() do
-    File.open!(".hosts.txt")
-    |> IO.stream(:line)
-    |> Enum.each(&Node.ping(String.to_atom(String.trim(&1))))
+    File.stream!(".hosts.txt") 
+    |> Stream.map(&String.trim/1) 
+    |> Stream.map(&String.to_atom/1) 
+    |> Stream.map(&Node.ping/1) 
+    |> Stream.run
   end
 
   # kick off some random job to burn cpu
