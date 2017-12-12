@@ -7,15 +7,22 @@ config :logger,
 config :libcluster,
   topologies: [
     app: [
-      strategy: Cluster.Strategy.Epmd,
-      config: [
-        hosts: [
-          :"a@172.19.185.194", 
-          :"b@172.19.185.194"
-        ]
-      ],
+      strategy: Cluster.Strategy.ErlangHosts
     ]
   ]
+
+# config :libcluster,
+#   topologies: [
+#     app: [
+#       strategy: Cluster.Strategy.Epmd,
+#       config: [
+#         hosts: [
+#           :"a@172.19.185.194", 
+#           :"b@172.19.185.194"
+#         ]
+#       ],
+#     ]
+#   ]
 
 # config :libcluster,
 #   topologies: [
