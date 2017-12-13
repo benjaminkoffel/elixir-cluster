@@ -18,19 +18,16 @@ sudo hostnamectl set-hostname $HOSTNAME
 echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
 sed -i -e "s/\-name.*/\-name $HOSTNAME\@$ADDRESS/g" _build/dev/rel/app/releases/0.1.0/vm.args
 
-# hardcode hosts.txt
-echo "$HOSTNAME@$ADDRESS" >> _build/dev/rel/app/.hosts.txt
-# echo "ip-172-31-4-233@172.31.4.233" >> _build/dev/rel/app/.hosts.txt
-# echo "ip-172-31-22-193@172.31.22.193" >> _build/dev/rel/app/.hosts.txt
-
 # create .hosts.txt file containing other nodes
-# AWS_DEFAULT_REGION=ap-southeast-2
-# SERVER_CLASS=elixir-cluster-autoscaling-group
-# aws ec2 describe-instances \
-#   --region ap-southeast-2
-#   --query 'Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddresses[].PrivateDnsName' \
-#   --output text \
-#   --filter Name=tag:Class,Values=${SERVER_CLASS} | sed '$!N;s/\t/\n/' | sed -e "s/\(.*\)/'\1'./" > .hosts.txt
+aws ec2 describe-instances \
+  --region ap-southeast-2 \
+  --query 'Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddresses[].PrivateDnsName' \
+  --output text \
+  --filter Name=tag:Project,Values=elixir-cluster \
+  | sed '$!N;s/\t/\n/' \
+  | sed 's/[.].*$//' \
+  | sed 's@ip\-\(.*\)\-\(.*\)\-\(.*\)\-\(.*\)@ip\-\1\-\2\-\3\-\4\@\1\.\2\.\3\.\4@' \
+  > .hosts.txt
 
 # run application as daemon
 _build/dev/rel/app/bin/app start
