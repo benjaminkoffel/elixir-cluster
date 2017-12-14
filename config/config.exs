@@ -4,35 +4,15 @@ config :logger,
   backends: [:console],
   compile_time_purge_level: :info
 
-# config :libcluster,
-#   topologies: [
-#     app: [
-#       strategy: Cluster.Strategy.ErlangHosts
-#     ]
-#   ]
+config :ex_vmstats,
+  namespace: "vm_stats",
+  backend: :ex_statsd,
+  interval: 3000,
+  use_histogram: true,
+  sched_time: false
 
-# config :libcluster,
-#   topologies: [
-#     app: [
-#       strategy: Cluster.Strategy.Epmd,
-#       config: [
-#         hosts: [
-#           :"ip-172-31-31-153@172.31.31.153", 
-#           :"ip-172-31-11-52@172.31.11.52"
-#         ]
-#       ]
-#     ]
-#   ]
-
-# config :libcluster,
-#   topologies: [
-#     gossip_example: [
-#       strategy: Cluster.Strategy.Gossip,
-#       config: [
-#         port: 45892,
-#         if_addr: {0,0,0,0},
-#         multicast_addr: {230,1,1,251},
-#         multicast_ttl: 1
-#       ]
-#     ]
-#   ]
+config :ex_statsd,
+  host: 127.0.0.1,
+  port: 8125,
+  namespace: "elixir-cluster",
+  tags: []

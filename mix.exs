@@ -14,7 +14,7 @@ defmodule App.Mixfile do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      applications: [:logger, :libcluster, :swarm],
+      applications: [:logger, :swarm, :ex_statsd, :ex_vmstats],
       mod: {App, []}
     ]
   end
@@ -23,9 +23,10 @@ defmodule App.Mixfile do
   defp deps do
     [
       {:distillery, "~> 1.0"},
-      {:libcluster, "~> 2.1"},
       {:swarm, "~> 3.0"}
-      # {:manifold, "~> 1.0"}
+      {:ex_statsd, "~> 0.5.1"},
+      {:ex_vmstats, "~> 0.0.1"}
+      # {:chaos_spawn, "~> 0.3.0"}
     ]
   end
 end
