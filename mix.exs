@@ -23,7 +23,7 @@ defmodule App.Mixfile do
   defp deps do
     [
       {:distillery, "~> 1.0"},
-      {:swarm, "~> 3.0"}
+      {:swarm, "~> 3.0"},
       {:ex_statsd, "~> 0.5.1"},
       {:ex_vmstats, "~> 0.0.1"}
       # {:chaos_spawn, "~> 0.3.0"}

@@ -12,7 +12,7 @@ config :ex_vmstats,
   sched_time: false
 
 config :ex_statsd,
-  host: 127.0.0.1,
+  host: "127.0.0.1",
   port: 8125,
   namespace: "elixir-cluster",
   tags: []
