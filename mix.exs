@@ -26,7 +26,6 @@ defmodule App.Mixfile do
       {:swarm, "~> 3.0"},
       {:ex_statsd, "~> 0.5.1"},
       {:ex_vmstats, "~> 0.0.1"}
-      # {:chaos_spawn, "~> 0.3.0"}
     ]
   end
 end

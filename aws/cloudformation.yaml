@@ -12,23 +12,24 @@ Parameters:
 
   InternalCidr: 
     Type: String
-    Description: CIDR range that can access all
+    Description: CIDR range that can access all ports
 
 Resources:
 
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupId: elixir-cluster-security-group
+      GroupName: elixir-security-group
+      GroupDescription: elixir-security-group
       VpcId: !Ref VpcId
       SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: '22'
-        ToPort: '22'
+        FromPort: 22
+        ToPort: 22
         CidrIp: !Ref ExternalCidr
       - IpProtocol: tcp
-        FromPort: '0'
-        ToPort: '65535'
+        FromPort: 0
+        ToPort: 65535
         CidrIp: !Ref InternalCidr
       SecurityGroupEgress:
       - IpProtocol: tcp
@@ -40,7 +41,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
         - Effect: Allow
           Principal:
@@ -48,17 +49,17 @@ Resources:
             - ec2.amazonaws.com
           Action:
           - sts:AssumeRole
-      Path: "/"
+      Path: /
 
   Policy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: elixir-cluster-policy
+      PolicyName: elixir-policy
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
-          Action: "ec2:DescribeInstances"
+          Action: ec2:DescribeInstances
           Resource: "*"
       Roles:
       - !Ref Role
@@ -66,38 +67,82 @@ Resources:
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      Path: "/"
+      Path: /
       Roles:
-      - !Ref RootRole
+      - !Ref Role
 
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      ImageId: ami-c315e0a1
+      ImageId: ami-1b2bde79
       SecurityGroups:
       - !Ref SecurityGroup
-      InstanceType: t2.nano
+      InstanceType: m3.medium
       IamInstanceProfile: !Ref InstanceProfile
       AssociatePublicIpAddress: true
-      KeyName: elixir-cluster-keypair
+      KeyName: elixir-cluster-key-pair
       UserData: !Base64 |
         #!/bin/bash -x
-        curl -s https://raw.githubusercontent.com/benjaminkoffel/elixir-cluster/master/aws/init.sh | sudo bash
+
+        # erlang requires home env var
+        export HOME="/root"
+        
+        # install packages
+        wget https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb
+        dpkg -i erlang-solutions_1.0_all.deb
+        apt-get update
+        apt-get install -y esl-erlang elixir git awscli
+
+        # install datadog agent
+        apt-get update
+        apt-get install apt-transport-https
+        sh -c "echo 'deb https://apt.datadoghq.com/ stable main' > /etc/apt/sources.list.d/datadog.list"
+        apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 C7A7DA52
+        apt-get update
+        apt-get install datadog-agent
+        sh -c "sed 's/api_key:.*/api_key: XXXXXXXXXX/' /etc/dd-agent/datadog.conf.example > /etc/dd-agent/datadog.conf"
+        /etc/init.d/datadog-agent start
+
+        # download and build application
+        cd /opt
+        git clone https://github.com/benjaminkoffel/elixir-cluster.git
+        cd elixir-cluster
+        mix local.hex --force && mix deps.get && mix release
+
+        # set hostname and address from instance metadata
+        HOSTNAME=$(curl http://169.254.169.254/latest/meta-data/hostname | sed 's/[.].*$//')
+        ADDRESS=$(echo $HOSTNAME | sed 's/ip-//g' | sed 's/[-]/\./g')
+        sudo hostnamectl set-hostname $HOSTNAME
+        echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
+        sed -i -e "s/\-name.*/\-name $HOSTNAME\@$ADDRESS/g" _build/dev/rel/app/releases/0.1.0/vm.args
+
+        # create .hosts.txt file containing other nodes
+        aws ec2 describe-instances \
+          --region ap-southeast-2 \
+          --query 'Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddresses[].PrivateDnsName' \
+          --output text \
+          --filter Name=tag:Project,Values=elixir-cluster \
+          | sed '$!N;s/\t/\n/' \
+          | sed 's/[.].*$//' \
+          | sed 's@ip\-\(.*\)\-\(.*\)\-\(.*\)\-\(.*\)@ip\-\1\-\2\-\3\-\4\@\1\.\2\.\3\.\4@' \
+          > _build/dev/rel/app/.hosts.txt
+
+        # run application as daemon
+        _build/dev/rel/app/bin/app start
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      AvailabilityZones:
-        - ap-southeast-2a
-        - ap-southeast-2b
-        - ap-southeast-2c
+      VPCZoneIdentifier:
+      - subnet-5ed50529
+      - subnet-1954ff7c
       LaunchConfigurationName: !Ref LaunchConfiguration
       DesiredCapacity: 2
       MinSize: 2
-      MaxSize: 10
+      MaxSize: 8
       Tags:
       - Key: Owner
-        Value: bkoffel
+        Value: bkoffel@seek.com.au
         PropagateAtLaunch: true
       - Key: Project
         Value: elixir-cluster
@@ -106,7 +151,7 @@ Resources:
         Value: security
         PropagateAtLaunch: true
 
-  ScalingPolicyUp:
+  ScalingPolicyOut:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AdjustmentType: ChangeInCapacity
@@ -114,7 +159,7 @@ Resources:
       Cooldown: 60
       ScalingAdjustment: 1
   
-  ScalingPolicyDown:
+  ScalingPolicyIn:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AdjustmentType: ChangeInCapacity
@@ -122,15 +167,15 @@ Resources:
       Cooldown: 300
       ScalingAdjustment: -1
 
-  AlarmUp:
+  AlarmOut:
     Type: AWS::CloudWatch::Alarm
     Properties:
       EvaluationPeriods: 1
       Statistic: Average
       Threshold: 90
-      AlarmDescription: 
       Period: 60
-      AlarmActions: !Ref ScalingPolicyUp
+      AlarmActions: 
+      - !Ref ScalingPolicyOut
       Namespace: AWS/EC2
       Dimensions:
       - Name: AutoScalingGroupName
@@ -138,15 +183,15 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       MetricName: CPUUtilization
 
-  AlarmDown:
+  AlarmIn:
     Type: AWS::CloudWatch::Alarm
     Properties:
       EvaluationPeriods: 5
       Statistic: Average
       Threshold: 40
-      AlarmDescription: 
       Period: 60
-      AlarmActions: !Ref ScalingPolicyDown
+      AlarmActions: 
+      - !Ref ScalingPolicyIn
       Namespace: AWS/EC2
       Dimensions:
       - Name: AutoScalingGroupName
