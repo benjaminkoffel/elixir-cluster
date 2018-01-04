@@ -16,14 +16,13 @@ This is a hack project so parameters, automation and actual functionality is pie
 mix local.hex --force && mix deps.get && mix compile
 
 # set starting nodes in .hosts.txt (replace IP with your own)
-echo "" > .hosts.txt
-echo ":\"a@192.168.1.1\"" >> .hosts.txt
+echo ":\"a@192.168.1.1\"" > .hosts.txt
 echo ":\"b@192.168.1.1\"" >> .hosts.txt
 
-# start iex running on node A
+# start iex running app on node A
 iex --name a@192.168.1.1 -S mix
 
-# start iex running on node B
+# start iex running app on node B
 iex --name b@192.168.1.1 -S mix
 ```
 
